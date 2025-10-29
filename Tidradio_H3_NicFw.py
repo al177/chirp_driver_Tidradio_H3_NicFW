@@ -29,34 +29,51 @@ LOG = logging.getLogger(__name__)
 MEM_FORMAT = """
 
 #seekto 0x0000;
+
 struct {
-    ul32 rxfreq;        // byte[4]  - RX Frequency in 10Hz units 32 bit unsigned little endian
-    ul32 txfreq;        // byte[4]  - TX Frequency in 10Hz units 32 bit unsigned little endian
-    ul16 rxtone;        // byte[2]  - RX Sub Tone CTCSS: 0.1Hz units,  DCS: codeword|0x8000[|0x4000 for reverse tone] . 16 bit unsigned little endian
-    ul16 txtone;        // byte[2]  - TX Sub Tone (as rx sub tone)
-    u8 txpower;         // byte[1]  - TX Power - 8 bit unsigned
-    u16 group2:4,       // bit[4]   - Group membership. 0=No group, 1-15=group A-O
-        group1:4,       // bit[4]   - Group membership. 0=No group, 1-15=group A-O
-        group4:4,       // bit[4]   - Group membership. 0=No group, 1-15=group A-O
-        group3:4;       // bit[4]   - Group membership. 0=No group, 1-15=group A-O
-    u8 unused1:1,       // bit[1]   - Other bits are reserved
-       unused2:2,       // bit[2]   - Other bits are reserved
-       unused3:1,       // bit[1]   - Other bits are reserved 
-       unused4:1,       // bit[1]   - Other bits are reserved 
+    u32 rxFreq;        // byte[4]  - RX Frequency in 10Hz units 32 bit unsigned little endian
+    u32 txFreq;        // byte[4]  - TX Frequency in 10Hz units 32 bit unsigned little endian
+    ul16 rxSubTone;     // byte[2]  - RX Sub Tone CTCSS: 0.1Hz units,  DCS: codeword|0x8000[|0x4000 for reverse tone] . 16 bit unsigned little endian
+    ul16 txSubTone;     // byte[2]  - TX Sub Tone (as rx sub tone)
+    u8 txPower;         // byte[1]  - TX Power - 8 bit unsigned
+    u16 group4:4,       // bit[4]   - Group membership. 0=No group, 1-15=group A-O
+        group3:4,       // bit[4]   - Group membership. 0=No group, 1-15=group A-O
+        group2:4,       // bit[4]   - Group membership. 0=No group, 1-15=group A-O
+        group1:4;       // bit[4]   - Group membership. 0=No group, 1-15=group A-O
+    u8 busylock:1,      // bit[1]   - Busy Lock. 0=Normal, 1=Lock TX on busy (#ADDME)
+       reversed:1,      // bit[1]   - Reversed TX/RX. 0=Normal, 1=Reversed (#ADDME)
+       pttID:2,         // bit[2]   - PTT ID. 0=None, 1=ID on key, 2=ID on unkey, 3=ID on both
+       position:1,      // bit[1]   - Not used
        modulation:2,    // bit[2]   - Modulation - 0=Auto, 1=FM, 2=AM, 3=USB
        bandwidth:1;     // bit[1]   - Bandwith - 0=Wide, 1=Narrow
     u32 reserved;       // byte[4]  - Reserved
     char name[12];      // byte[12] - ASCII channel name, unused characters should be null (0)
 } memory[199]; 
 
+// 0x1900
 struct {
     #printoffset "thisis_0xC8";
     // Block 0xC8
-    u16 magic;                  // byte[2] = 0x9BCF (magic value)
+    u16 magic;                  // byte[2] = 0xD82F (magic value)
     u8 squelch;                 // byte[1] = squelch, 8 bit unsigned but only valid values are 0-9
-    ul16 step;                  // byte[2] = step, 16 bit unsigned little endian. 10Hz units
-    u8 micgain;                 // byte[1] = mic gain, 8 bit unsigned but only valid values are 0-31
-    u8 lcd;                     // byte[1] = LCD brightness, 8 bit unsigned, valid 0-28
+    u8 dualWatch;               // byte[1] = #ADDME
+    u8 autoFloor;               // byte[1] = #ADDME
+    u8 activeVfo;               // byte[1] = #ADDME
+    ul16 step;                  // byte[2] = step, 16 /bit unsigned little endian. 10Hz units
+    ul16 rxSplit;               // byte[2] = RX VHF->UHF, Point to switch filters from VHF to UHF. 100kHz units. #ADDME
+    ul16 txSplit;               // byte[2] = TX VHF->UHF, Point to switch filters from VHF to UHF. 100kHz units. #ADDME
+    u8 pttMode;                 // byte[1] = PTT mode, 0=Dual, 1=Single, 2=Hybrid #ADDME
+    u8 txModMeter;              // byte[1] = TX modulation meter, 0=Off, 1=On #ADDME
+    u8 micGain;                 // byte[1] = mic gain, 8 bit unsigned but only valid values are 0-31
+    u8 txDeviation;             // byte[1] = TX deviation, 0-99 #ADDME
+    i8 reserved;                // byte[1] = was xtal671, now unused
+    u8 battstyle;               // byte[1] = Battery style, 0=0ff, 1=icon, 2=percentage, 3=voltage #ADDME
+    ul16 scanRange;             // byte[2] = VFO scan range, 0.01-600MHz in 10kHz #ADDME
+    ul16 scanPersist;           // byte[2] = VFO scan persist, 0.0-20 seconds in 0.1 seconds #ADDME
+    u8 scanResume;              // byte[1] = VFO scan resume, 0-250 seconds #ADDME
+    u8 ultraScan;               // byte[1] = UltraScan setting for BK4819 #ADDME
+    u8 toneMonitor;             // byte[1] = Decode tones, 0=Off, 1=On, 2=Clone #ADDME
+    u8 lcd;                     // byte[1] = lcd brightness, 8 bit unsigned, valid 0-28
     u8 subtonedev;              // byte[1] = Sub Tone deviation, 8 bit unsigned, valid 0-127
     u8 keytones;                // byte[1] = Key tones, bool
     u8 opmode;                  // byte[1] = Operation mode, 0=VFO, 1=Channel, 2=Group
@@ -73,8 +90,8 @@ struct {
     u8 tonemonitor;             // byte[1] = Controls if the radio will display the sub-tone of a received signal. If in "Clone" mode, it will set the TX CTCSS/DCS setting to match it. 0=off, 1=on, 2=clone
     ul16 reptone;               // byte[2] = in Hz
     u8 battstyle;               // byte[1] = 0=off, 1=icon, 2=percentage, 3=voltage
-    u8 activevfo;               // byte[1] = 0=VFO-A, 1=VFO-B (single PTT mode only)
-    u8 dualwatch;               // byte[1] = bool
+    u8 activeVfo;               // byte[1] = 0=VFO-A, 1=VFO-B (single PTT mode only)
+    u8 dualWatch;               // byte[1] = bool
     u8 counterlev;              // byte[1] = Sets the sensitivity of the frequency counter. The higher the value, the stronger a signal needs to be to activate the detection. (100-254)
     u8 activeplan;              // byte[1] = current band plan in use, 0xff = no matched plan
     u8 txmodview;               // byte[1] = bool, tx modulation meter enabled
@@ -180,7 +197,7 @@ CMD_WRITE_EEPROM            = b'\x31' # w/  Ack
 CMD_RESET_RADIO             = b'\x49' # wo/  Ack
 CMD_END_REMOTE_SESSION      = b'\x4B' # w/  Ack
 
-MAGIC_SETTINGS              = 0x9BCF
+MAGIC_SETTINGS              = 0xD82F
 MAGIC_BANDPLAN              = 0x6DA4
 
 BLOCK_DATA_SIZE = 0x0020
@@ -197,7 +214,7 @@ MODULATION_LIST     = ["Auto", "FM", "AM", "USB"]
 BANDWIDTH_LIST      = ["Wide", "Narrow"]
 SQUELCH_LIST        = ['Off' if x == 0 else f'{x}' for x in range(0, 10)]
 OP_MODES            = ["VFO", "Channel", "Group"]
-MICGAIN_LIST        = [f'{x}' for x in range(0, 32)]
+micGain_LIST        = [f'{x}' for x in range(0, 32)]
 LCDBRIGHT_LIST      = [f'{x}' for x in range(0, 29)]
 SUBTONEDEV_LIST     = [f'{x}' for x in range(0, 128)]
 SCANLINGER_LIST     = [f'{x}' for x in range(10, 128)]
@@ -205,7 +222,7 @@ POWERLEVEL_LIST     = ['N/T' if x == 0 else f'{x}' for x in range(0, 256)]
 LCDTIMEOUT_LIST     = ['Off' if x == 0 else f'{x}' for x in range(0, 201)]
 BATTSTYLE_LIST      = ["Off", "Icon", "Percentage", "Voltage"]
 TONEMONITOR_LIST    = ["Off", "On", "Clone"]
-ACTIVEVFO_LIST      = ["VFO-A", "VFO-B"]
+activeVfo_LIST      = ["VFO-A", "VFO-B"]
 WAKESCREEN_LIST     = ["Keys + RX", "Keys Only", "Dimmer"]
 RXEXPANDER_LIST     = ["Off", "1:2", "1:3", "1:4"]
 VOXLEVEL_LIST       = ['Off' if x == 0 else f'{x}' for x in range(0, 16)]
@@ -267,12 +284,15 @@ def _read_block(radio, block):
     serial.write([block])
     
     ack = serial.read(1)
+    if ack != CMD_READ_EEPROM:
+        LOG.debug("ACK failed for block {}".format(block))
+        return None
     data = serial.read(BLOCK_DATA_SIZE)
     checksum_r = serial.read(1)
         
     if checksum_r != calc_checksum(data):
         LOG.debug("Received {} expected {} checksum mismatch while writing!".format(checksum_r,calc_checksum(data)))     
-   
+        return None
     
     return data    
 
@@ -301,7 +321,15 @@ def do_download(radio):
     data = bytearray()
 
     for i in range(1,END_BLOCK):
-        block = _read_block(radio, i)
+        tries=10
+        while True:
+            block = _read_block(radio, i)
+            if block is not None:
+                break
+            if tries <= 0:
+                return -1
+            tries -= 1
+
         data.extend(block)
         LOG.info("Block: %i",i)
         LOG.info(util.hexprint(bytes(block)))
@@ -489,9 +517,9 @@ class TH3NicFw(chirp_common.CloneModeRadio):
             return mem
         
         # Convert your low-level frequency to Hertz
-        mem.freq = int(_mem.rxfreq) * 10
+        mem.freq = int(_mem.rxFreq) * 10
 
-        mem.power = POWERLEVEL_LIST[int(_mem.txpower)]
+        mem.power = POWERLEVEL_LIST[int(_mem.txPower)]
 
         # Channel name
         for char in _mem.name:
@@ -500,17 +528,17 @@ class TH3NicFw(chirp_common.CloneModeRadio):
             mem.name += str(char)
         mem.name = mem.name.rstrip()
 
-        chirp_common.split_tone_decode(mem, decode_tone(_mem.txtone),
-                                            decode_tone(_mem.rxtone))
+        chirp_common.split_tone_decode(mem, decode_tone(_mem.txSubTone),
+                                            decode_tone(_mem.rxSubTone))
 
 
         # Offset
-        if int(_mem.rxfreq) == int(_mem.txfreq):
+        if int(_mem.rxFreq) == int(_mem.txFreq):
             mem.duplex = ""
             mem.offset = 0
         else:
-            mem.duplex = int(_mem.rxfreq) > int(_mem.txfreq) and "-" or "+"
-            mem.offset = abs(int(_mem.rxfreq) - int(_mem.txfreq)) * 10
+            mem.duplex = int(_mem.rxFreq) > int(_mem.txFreq) and "-" or "+"
+            mem.offset = abs(int(_mem.rxFreq) - int(_mem.txFreq)) * 10
 
         mem.mode = MODULATION_LIST[int(_mem.modulation)]  
 
@@ -557,24 +585,24 @@ class TH3NicFw(chirp_common.CloneModeRadio):
             return
         
         if mem.duplex == "split":
-            _mem.txfreq = mem.offset / 10
+            _mem.txFreq = mem.offset / 10
         elif mem.duplex == "+":
-            _mem.txfreq = (mem.freq + mem.offset) / 10
+            _mem.txFreq = (mem.freq + mem.offset) / 10
         elif mem.duplex == "-":
-            _mem.txfreq = (mem.freq - mem.offset) / 10
+            _mem.txFreq = (mem.freq - mem.offset) / 10
         else:
-            _mem.txfreq = mem.freq / 10
+            _mem.txFreq = mem.freq / 10
 
         _mem.name = mem.name.rstrip('\xFF').ljust(12, '\x20')
 
-        ((txmode, txtone, txpol),
-         (rxmode, rxtone, rxpol)) = chirp_common.split_tone_encode(mem)
+        ((txmode, txSubTone, txpol),
+         (rxmode, rxSubTone, rxpol)) = chirp_common.split_tone_encode(mem)
 
         
-        _mem.txtone = int(encode_tone(txmode, txtone, txpol))
-        _mem.rxtone = int(encode_tone(rxmode, rxtone, rxpol))
+        _mem.txSubTone = int(encode_tone(txmode, txSubTone, txpol))
+        _mem.rxSubTone = int(encode_tone(rxmode, rxSubTone, rxpol))
 
-        _mem.txpower = POWERLEVEL_LIST.index(mem.power)
+        _mem.txPower = POWERLEVEL_LIST.index(mem.power)
 
         #extra
         for element in mem.extra:
@@ -623,8 +651,8 @@ class TH3NicFw(chirp_common.CloneModeRadio):
                 _settings.step = element.value * 100
 
             # Mic Gain
-            if element.get_name() == "micgain":
-                _settings.micgain = MICGAIN_LIST.index(str(element.value))
+            if element.get_name() == "micGain":
+                _settings.micGain = micGain_LIST.index(str(element.value))
 
             # LCD Brightness
             if element.get_name() == "lcd":
@@ -861,8 +889,8 @@ class TH3NicFw(chirp_common.CloneModeRadio):
         rset = RadioSetting("squelch", "Squelch Level", rs)
         basic.append(rset)
 
-        rs = RadioSettingValueList(MICGAIN_LIST, current_index = _mem.settings.micgain)
-        rset = RadioSetting("micgain", "Mic Gain", rs)
+        rs = RadioSettingValueList(micGain_LIST, current_index = _mem.settings.micGain)
+        rset = RadioSetting("micGain", "Mic Gain", rs)
         basic.append(rset)
 
         rs = RadioSettingValueList(LCDBRIGHT_LIST, current_index = _mem.settings.lcd)
@@ -923,14 +951,14 @@ class TH3NicFw(chirp_common.CloneModeRadio):
         rset = RadioSetting("battstyle", "Battery Style", rs)
         basic.append(rset)
 
-        activevfo = _mem.settings.activevfo
-        rs = RadioSettingValueList(ACTIVEVFO_LIST, current_index = activevfo)
-        rset = RadioSetting("activevfo", "LCD Timeout [sec]", rs)
+        activeVfo = _mem.settings.activeVfo
+        rs = RadioSettingValueList(activeVfo_LIST, current_index = activeVfo)
+        rset = RadioSetting("activeVfo", "LCD Timeout [sec]", rs)
         basic.append(rset)
 
-        dualwatch = bool(_mem.settings.dualwatch)
-        rs = RadioSettingValueBoolean(dualwatch)
-        rset = RadioSetting("dualwatch", "Dual Watch Enable", rs)
+        dualWatch = bool(_mem.settings.dualWatch)
+        rs = RadioSettingValueBoolean(dualWatch)
+        rset = RadioSetting("dualWatch", "Dual Watch Enable", rs)
         basic.append(rset)
 
         counterlev = int(_mem.settings.counterlev)
