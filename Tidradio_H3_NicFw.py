@@ -33,8 +33,8 @@ MEM_FORMAT = """
 struct {
     u32 rxFreq;        // byte[4]  - RX Frequency in 10Hz units 32 bit unsigned little endian
     u32 txFreq;        // byte[4]  - TX Frequency in 10Hz units 32 bit unsigned little endian
-    ul16 rxSubTone;     // byte[2]  - RX Sub Tone CTCSS: 0.1Hz units,  DCS: codeword|0x8000[|0x4000 for reverse tone] . 16 bit unsigned little endian
-    ul16 txSubTone;     // byte[2]  - TX Sub Tone (as rx sub tone)
+    u16 rxSubTone;     // byte[2]  - RX Sub Tone CTCSS: 0.1Hz units,  DCS: codeword|0x8000[|0x4000 for reverse tone] . 16 bit unsigned little endian
+    u16 txSubTone;     // byte[2]  - TX Sub Tone (as rx sub tone)
     u8 txPower;         // byte[1]  - TX Power - 8 bit unsigned
     u16 group4:4,       // bit[4]   - Group membership. 0=No group, 1-15=group A-O
         group3:4,       // bit[4]   - Group membership. 0=No group, 1-15=group A-O
@@ -48,9 +48,11 @@ struct {
        bandwidth:1;     // bit[1]   - Bandwith - 0=Wide, 1=Narrow
     u32 reserved;       // byte[4]  - Reserved
     char name[12];      // byte[12] - ASCII channel name, unused characters should be null (0)
-} memory[199]; 
+} memory[200];
 
 // 0x1900
+#seekto 0x1900;
+
 struct {
     #printoffset "thisis_0xC8";
     // Block 0xC8
@@ -59,123 +61,153 @@ struct {
     u8 dualWatch;               // byte[1] = #ADDME
     u8 autoFloor;               // byte[1] = #ADDME
     u8 activeVfo;               // byte[1] = #ADDME
-    ul16 step;                  // byte[2] = step, 16 /bit unsigned little endian. 10Hz units
-    ul16 rxSplit;               // byte[2] = RX VHF->UHF, Point to switch filters from VHF to UHF. 100kHz units. #ADDME
-    ul16 txSplit;               // byte[2] = TX VHF->UHF, Point to switch filters from VHF to UHF. 100kHz units. #ADDME
+    u16 step;                  // byte[2] = step, 16 /bit unsigned little endian. 10Hz units
+    u16 rxSplit;               // byte[2] = RX VHF->UHF, Point to switch filters from VHF to UHF. 100kHz units. #ADDME
+    u16 txSplit;               // byte[2] = TX VHF->UHF, Point to switch filters from VHF to UHF. 100kHz units. #ADDME
     u8 pttMode;                 // byte[1] = PTT mode, 0=Dual, 1=Single, 2=Hybrid #ADDME
     u8 txModMeter;              // byte[1] = TX modulation meter, 0=Off, 1=On #ADDME
     u8 micGain;                 // byte[1] = mic gain, 8 bit unsigned but only valid values are 0-31
     u8 txDeviation;             // byte[1] = TX deviation, 0-99 #ADDME
     i8 reserved;                // byte[1] = was xtal671, now unused
-    u8 battstyle;               // byte[1] = Battery style, 0=0ff, 1=icon, 2=percentage, 3=voltage #ADDME
-    ul16 scanRange;             // byte[2] = VFO scan range, 0.01-600MHz in 10kHz #ADDME
-    ul16 scanPersist;           // byte[2] = VFO scan persist, 0.0-20 seconds in 0.1 seconds #ADDME
+    u8 battStyle;               // byte[1] = Battery style, 0=0ff, 1=icon, 2=percentage, 3=voltage #ADDME
+    u16 scanRange;              // byte[2] = VFO scan range, 0.01-600MHz in 10kHz #ADDME
+    u16 scanPersist;            // byte[2] = VFO scan persist, 0.0-20 seconds in 0.1 seconds #ADDME
     u8 scanResume;              // byte[1] = VFO scan resume, 0-250 seconds #ADDME
     u8 ultraScan;               // byte[1] = UltraScan setting for BK4819 #ADDME
     u8 toneMonitor;             // byte[1] = Decode tones, 0=Off, 1=On, 2=Clone #ADDME
-    u8 lcd;                     // byte[1] = lcd brightness, 8 bit unsigned, valid 0-28
-    u8 subtonedev;              // byte[1] = Sub Tone deviation, 8 bit unsigned, valid 0-127
-    u8 keytones;                // byte[1] = Key tones, bool
-    u8 opmode;                  // byte[1] = Operation mode, 0=VFO, 1=Channel, 2=Group
-    u8 channel;                 // byte[1] = current channel 0-199 the channel currently being used (0 and 1 are VFO-A and VFO-B, 2 is channel1, 3 is channel2 etc..)
-    u8 lastchannel;             // byte[1] = Last channel 2-199 the last channel used in channel or group mode. 
-    u8 group;                   // byte[1] = current group 1-15
-    u8 scanlinger;              // byte[1] = scan linger (0A = 10)
-    ul16 rxfilter;              // byte[2] = RX vhf/uhf filter transition frequency, 16 bit unsigned little endian 100kHz units
-    ul16 txfilter;              // byte[2] = TX vhf/uhf filter transition frequency, 16 bit unsigned little endian 100kHz units
-    ul16 scansteps;             // byte[2] = The number of frequency steps the VFO scanner will scan before starting at the beginning again (1 - 9999) 
-    u8 editchan;                // byte[1] = channel that's the target for editing
-    u8 chanfunc;                // byte[1]
-    u8 lcdtimeout;              // byte[1] = Period of inactivity (seconds) before the LCD backlight and keypad light turns off. 0=off, 1 - 200
-    u8 tonemonitor;             // byte[1] = Controls if the radio will display the sub-tone of a received signal. If in "Clone" mode, it will set the TX CTCSS/DCS setting to match it. 0=off, 1=on, 2=clone
-    ul16 reptone;               // byte[2] = in Hz
-    u8 battstyle;               // byte[1] = 0=off, 1=icon, 2=percentage, 3=voltage
-    u8 activeVfo;               // byte[1] = 0=VFO-A, 1=VFO-B (single PTT mode only)
-    u8 dualWatch;               // byte[1] = bool
-    u8 counterlev;              // byte[1] = Sets the sensitivity of the frequency counter. The higher the value, the stronger a signal needs to be to activate the detection. (100-254)
-    u8 activeplan;              // byte[1] = current band plan in use, 0xff = no matched plan
-    u8 txmodview;               // byte[1] = bool, tx modulation meter enabled
-    
-    // Block 0xC9
-    u8 voxlevel;                // byte[1] = VOX Sensitivity (Values: Off, 1-15)
-    u8 voxtail;                 // byte[1] = Centisecond pause before VOX TX is dropped after TX modulation stops. (Values: 50-255)
-    ul16 txtimeout;             // byte[2] = Maximum TX time in seconds (1-300)
-    ul32 fmtunerfreq;           // byte[4] = 
-    u8 fmtunerband;             // byte[1] = 
-    u8 fmtunerpresentbank;      // byte[1] = 
-    u8 fmtunersquelch;          // byte[1] = (bool)
-    u8 fmtunermonitorht;        // byte[1] = 
-    u8 rfgain;                  // byte[1] = Selects RX Gain sensitivity. 1 is least gain and 42 is max gain. AGC will use the automatic gain control. (0=AGC, 1-42)
-    u8 squelchtail;             // byte[1] = Amount of time in deciseconds the squelch will remain open after a signal is lost. (1-20)
-    u8 squelchtailelimination;  // byte[1] = Squelch tail elimination (0=off, 1=rx, 2=tx, 3=both)
-    u8 dualptt;                 // byte[1] = bool
-    u8 wakescreen;              // byte[1] = (0=Keys + RX, 1=Keys only, 2=Dimmer)
-    u8 showscanfreq;            // byte[1] = Sets if the displayed frequency on the screen will update during scanning. Off, 1-25
-    u8 rxexpander;              // byte[1] = Enables an audio processing feature that reduces static hiss with the trade-off being reduced audio quality (0=off, 1=1:2, 2=1:3, 3=1:4)    
-    ul16 stepfm;                // byte[1] =
-    ul16 stepam;                // byte[1] =
-    ul16 stepusb;               // byte[1] =
-    u8 scanhold;                // byte[1] =
-    u8 vfodisable;              // byte[1] = bool
-    u8 scopedisable;            // byte[1] =
-    u8 counterdisable;          // byte[1] =
-    u8 tunerdisable;            // byte[1] =
-    u8 disabledmenus[9];        // menu numbers to disable
-  
-    // Block 0xCA
-    u8 disabledmenusmagic;      // byte[1] = should be 0xAB
-    u8 affilters;
-    u8 bton;
-    u8 leftactive; 
-    u8 rightactive;
-    u8 rightinuse;
-    u8 lastleftactive; 
-    u8 lastrightactive;
-    u8 keylck;
-    u8 instantsave; 
-    u8 hfModFilters; 
-    u8 txdeviation;
-    u8 ultrascan;
-    u8 ignorebirdies; 
-    u8 allstar;
-    u8 breath;
-    u8 largenames;
-    i8 vhfcalib;
-    i8 uhfcalib;
-    char callsign[8];
+    u8 lcdBrightness;           // byte[1] = lcd brightness, 8 bit unsigned, valid 0-28 #ADDME
+    u8 lcdTimeout;              // byte[1] = lcd timeout, seconds #ADDME
+    u8 breathe;                 // byte[1] = Heartbeat, delay in seconds to blink keypad LED #ADDME
+    u8 dtmfDev;                 // byte[1] = DTMF tone volume, 0-127 #ADDME
+    u8 gamma;                   // byte[1] = LCD gamma, 0-3 #ADDME
+    u16 repeaterTone;           // byte[2] = Repeater activation tone, freq in Hz #ADDME
+    struct {
+        u8 group;                   // byte[1] = Currently selected group 1-15 (A-O) for VFO (0=channel mode) #ADDME
+        u8 lastGroup;               // byte[1] = Previously selected group 1-15 (A-O) for VFO #ADDME
+        u8 groupModeChannels[16];   // byte[16] = Selected channel for each group in this VFO, 0 is unused #ADDME
+        u8 mode;                    // byte[1] = Tuning mode for VFO: 0=VFO, 1=Channel or Group #ADDME
+    } vfoState[2];
+    u8 keyLock;                 // byte[1] = Keypad input lock, 0=Off, 1=On #ADDME
+    u8 bluetooth;               // byte[1] = Bluetooth radio enable, 0=Off, 1=On #ADDME
+    u8 powerSave;               // byte[1] = Power save, deciseconds to sleep the radio #ADDME
+    u8 keyTones;                // byte[1] = Key tones, bool #ADDME
+    u8 ste;                     // byte[1] = Squelch Tail Eliminator, 0=Off, 1=RX, 2=TX, 3=Both #ADDME
+    u8 rfGain;                  // byte[1] = RF Gain, 0-42 #ADDME
+    u8 sBarStyle;               // byte[1] = S-meter bar style, 0=Segmented, 1=Stepped, 2=Solid #ADDME
+    u8 sqNoiseLev;              // byte[1] = Squelch noise level threshold, 15-55 #ADDME
+    u32 lastFmtFreq;            // byte[4] = Last FM tuner frequency #ADDME
+    u8 vox;                     // byte[1] = VOX threshold level, 0=Off, 1-15 #ADDME
+    u16 voxTail;                // byte[2] = VOX dwell time, 1-50 in 0.1 second units #ADDME
+    u8 txTimeout;               // byte[1] = TX timeout, 0=Off, 1-250 seconds #ADDME
+    u8 dimmer;                  // byte[1] = LCD dim brightness, 0=None or use heartbeat, 1-15 level #ADDME
+    u8 dtmfSpeed;               // byte[1] = DTMF send speed 0-20 #ADDME
+    u8 noiseGate;               // byte[1] = Noise gate, 0=Off, 1=On #ADDME
+    u8 scanUpdate;              // byte[1] = Scan screen update delay, 0=Off, 1-50 #ADDME
+    u8 asl;                     // byte[1] = AllStar linking support, 0=Off, 1=COS on TX, 2=USB serial cmds, 3=COS on TX inverse #ADDME
+    u8 disableFmt;              // byte[1] = Disable FM tuner, 0=FM allowed, 1=FM disabled #ADDME
+    u16 pin;                    // byte[2] = 4 digit PIN #ADDME
+    u8 pinAction;               // byte[1] = Require PIN, 0=No PIN required, 1=PIN on keypad unlock, 2=PIN on unlock and power on #ADDME
+    u8 lcdInverted;             // byte[1] = Invert LCD colors, 0=Off, 1=On #ADDME
+    u8 afFilters;               // byte[1] = Audio filters, 0-8 (see docs) #ADDME
+    u8 ifFreq;                  // byte[1] = IF frequency, 0-6 (see docs) #ADDME
+    u8 sBarAlwaysOn;            // byte[1] = S meter bar update when squelch closed, 0=Off, 1=On #ADDME
+    u8 setVfo;                  // byte[1] = Current TX VFO for dual watch lock 0=A, 1=B #ADDME
+    u8 vfoLock;                 // byte[1] = VFO Dual watch lock enable, 0=Off, 1=On #ADDME
+    u8 dwDelay;                 // byte[1] = Dual watch scan delay, 1-30 seconds #ADDME
+    u8 stDev;                   // byte[1] = Subtone deviation, 0-127 #ADDME
+    u8 txCurrent;               // byte[1] = Display TX current, 0=show watts, 1=show amps #ADDME
+    u8 gain0;                   // byte[1] = AGC gain 0, 1-42 #ADDME
+    u8 gain1;                   // byte[1] = AGC gain 1, 1-42 #ADDME
+    u8 gain2;                   // byte[1] = AGC gain 2, 1-42 #ADDME
+    u8 gain3;                   // byte[1] = AGC gain 3, 1-42 #ADDME
+    u8 rfiCompAmount;           // byte[1] = Delay signal meter to lessen RFI, 0=Off, 1-30=delay #ADDME
+    u8 scrambleFreq;            // byte[1] = Scrambling frequency, 0=Off, 1-10=Scramble freq 2600-3500Hz #ADDME
+    u8 dtmfDecode;              // byte[1] = DTMF decode display, 0=Off, 1=always decode, 2=decode when squelch open #ADDME
+    u16 dtmfDelay;              // byte[2] = unused #ADDME
+    u16 dtmfEndPause;           // byte[2] = DTMF sequence decode end delay, 0-20 deciseconds #ADDME
+    u8 noiseCeiling;            // byte[1] = Noise ceiling level, 15-95 #ADDME
+    u8 amAgc;                   // byte[1] = AM AGC fix, 0=Off, 1=On #ADDME
+    u8 filler1[11];             // byte[11] = filler #ADDME
 } settings;
 
-#seekto 0x1960;
-ul32 fmpresetfreq[20];
-u8 fmpresetband[20];
-
-#seekto 0x19E2;
+#seekto 0x1de0;
 struct {
-    ul32 startfreq;
-    ul32 endfreq;
-    u8 maxpower;
-    u8 bandwidthbp:3,
-       modulationbp:3,
-       wrap:1,    
-       txallowed:1;     
-} bandplans[20];
+    // beging tuning block
+    u8 filler2[27];             // byte[11] = filler #ADDME
+    i8 xtal671;                 // byte[1] = XTAL671 radio tuning -128-+127 #ADDME
+    u8 uhfPeakWatts;            // byte[1] = UHF peak watts UNUSED #ADDME
+    u8 uhfPeakSetting;          // byte[1] = UHF peak setting #ADDME
+    u8 vhfPeakWatts;            // byte[1] = VHF peak watts UNUSED #ADDME
+    u8 vhfPeakSetting;          // byte[1] = VHF peak setting #ADDME
+} tuning;
+
+#seekto 0x1cf0;
+struct {
+    struct {
+        u16 d0      :4,     // bit[4] = DTMF digit 2
+            length  :4,     // bit[4] = DTMF sequence length
+            d2      :4,     // bit[4] = DTMF digit 1
+            d1      :4;     // bit[4] = DTMF digit 0
+        u16 d4      :4,     // bit[4] = DTMF digit 6
+            d3      :4,     // bit[4] = DTMF digit 5
+            d6      :4,     // bit[4] = DTMF digit 4
+            d5      :4;     // bit[4] = DTMF digit 3
+        u8  d8      :4,     // bit[4] = DTMF digit 8
+            d7      :4;     // bit[4] = DTMF digit 7
+    } dtmfSequence;
+    char DTMFPresetLabel[7];// byte[7] = DTMF preset label
+} dtmfPresets[20];
+#seekto 0x1c90;
+struct {
+    char groupLabel[6];     // byte[6] = Group label
+} groupLabels[16];
+
+struct {
+    // start settings3 block
+    u8 filler3[28];             // byte[28] = filler
+    u8 maxPowerVhf;             // byte[1] = Max power on VHF UNUSED #ADDME
+    u8 maxSettingVhf;           // byte[1] = Max power setting on VHF UNUSED #ADDME
+    u8 maxPowerUhf;             // byte[1] = Max power on UHF UNUSED #ADDME
+    u8 maxSettingUhf;           // byte[1] = Max power setting on UHF UNUSED #ADDME
+    u8 powerTableVhf[256];      // byte[256] = Power look up table VHF #ADDME
+    u8 powerTableUhf[256];      // byte[256] = Power look up table UHF #ADDME
+    // end settings3 block
+} settings3;
+
+#seekto 0x1a00;
+struct {
+    u16 planMagic;
+    struct {
+        u32 startfreq;
+        u32 endfreq;
+        u8 maxpower;
+        u8 bandwidthbp:3,
+        modulationbp:3,
+        wrap:1,
+        txallowed:1;
+    } planInfo[20];
+} bandPlan;
 
 #printoffset "thisis_0xD8"; // 6826
 #seekto 0x1AE0; // 6880
 
  
-struct{
-    ul32 startscanfreq;
-    ul16 numbersearches;
-    u8 squelchscan;
-    u8 squelchtailscan;
-    ul16 stepscan;
-    u8 scanhold;
-    u8 scantail;
-    u8 updatescan;
-    u8 modulationscan; 
-
-    } scanpresets[10];
+//struct{
+//    ul32 startscanfreq;
+//    ul16 numbersearches;
+//    u8 squelchscan;
+//    u8 squelchtailscan;
+//    ul16 stepscan;
+//    u8 scanhold;
+//    u8 scantail;
+//    u8 updatescan;
+//    u8 modulationscan;
+//
+//    } scanpresets[10];
+#seekto 0x0;
+struct {
+    u8 abyte[32];
+} blocks[256];
 """
 
 
@@ -205,7 +237,7 @@ INIT_ADDR_CHANNELS = 0x0040
 INIT_ADDR_SETTINGS = 0x1900
 BLOCK_CHANNEL = range(1,200)
 BLOCK_SETTINGS = 200
-END_BLOCK = 221
+END_BLOCK = 256
 
 
 # Basic Settings
@@ -255,16 +287,16 @@ def write_cmd(radio, cmd, check_ack=False):
     serial = radio.pipe
     serial.write(cmd)
     serial.timeout = 0.5
-    if check_ack == True:
+    if check_ack:
         ack = serial.read(1)
         if ack != cmd:
             LOG.debug("[ERR] Unable to communicate with nicFW -- there was no valid ACK for {} command ({} received).".format(cmd,ack))
 
 def _enter_programming_mode(radio):
-    write_cmd(radio, CMD_ENABLE_RADIO, check_ack=True)
+    write_cmd(radio, CMD_DISABLE_RADIO, check_ack=True)
 
 def _exit_programming_mode(radio):
-    write_cmd(radio, CMD_DISABLE_RADIO, check_ack= True)
+    write_cmd(radio, CMD_ENABLE_RADIO, check_ack= True)
 
 def _reset_radio(radio):
     write_cmd(radio, CMD_RESET_RADIO, check_ack= False)
@@ -291,7 +323,7 @@ def _read_block(radio, block):
     checksum_r = serial.read(1)
         
     if checksum_r != calc_checksum(data):
-        LOG.debug("Received {} expected {} checksum mismatch while writing!".format(checksum_r,calc_checksum(data)))     
+        LOG.debug("Received {} expected {} checksum mismatch while reading!".format(checksum_r,calc_checksum(data)))
         return None
     
     return data    
@@ -320,7 +352,7 @@ def do_download(radio):
     data = b""
     data = bytearray()
 
-    for i in range(1,END_BLOCK):
+    for i in range(0,END_BLOCK):
         tries=10
         while True:
             block = _read_block(radio, i)
@@ -457,7 +489,7 @@ class TH3NicFw(chirp_common.CloneModeRadio):
         rf.has_comment = False
 
 
-        rf.memory_bounds = (1, 198)
+        rf.memory_bounds = (0, 199)
         rf.valid_tmodes = ["", "Tone", "TSQL", "DTCS", "Cross"]
         rf.valid_cross_modes = ["Tone->Tone", "Tone->DTCS", "DTCS->Tone",
                                 "->Tone", "->DTCS", "DTCS->", "DTCS->DTCS"]
@@ -502,11 +534,19 @@ class TH3NicFw(chirp_common.CloneModeRadio):
         return self._memobj.memory[number]
 
     def get_memory(self, number):
+        # On nicFW 2.5+, memory 0 and 1 are VFO 0 and 1 defaults.
+        # Place these at the end of the list.
+
         _mem = self._get_mem(number)
     
         # Create a high-level memory object to return to the UI
         mem = chirp_common.Memory()
-        mem.number = number                 # Set the memory number
+        if (number == 0):
+            mem.number = 0
+        elif (number == 1):
+            mem.number = 0
+        else:
+            mem.number = number - 1                 # Set the memory number
 
         # LOG.info("Doing channel %i ",number)
     
@@ -515,18 +555,23 @@ class TH3NicFw(chirp_common.CloneModeRadio):
             mem.empty = True
             # LOG.info("Channel %i is empty!",number)
             return mem
-        
+
         # Convert your low-level frequency to Hertz
         mem.freq = int(_mem.rxFreq) * 10
 
         mem.power = POWERLEVEL_LIST[int(_mem.txPower)]
 
         # Channel name
-        for char in _mem.name:
-            if "\x00" in str(char) or "\xFF" in str(char):
-                char = ""
-            mem.name += str(char)
-        mem.name = mem.name.rstrip()
+        if (number == 0):
+            mem.name = 'VFO-A'
+        elif (number == 1):
+            mem.name = 'VFO-B'
+        else:
+            for char in _mem.name:
+                if "\x00" in str(char) or "\xFF" in str(char):
+                    char = ""
+                mem.name += str(char)
+            mem.name = mem.name.rstrip()
 
         chirp_common.split_tone_decode(mem, decode_tone(_mem.txSubTone),
                                             decode_tone(_mem.rxSubTone))
